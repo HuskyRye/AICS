@@ -49,7 +49,7 @@ def evaluate(mlp):
 def run_mnist():
     batch_size = 10000
     #h1, h2, c = HIDDEN1, HIDDEN2, OUT
-    h1, h2, c = 32, 16, 10
+    h1, h2, c = 128, 64, 10
     mlp = MNIST_MLP()
    
     mlp.build_model(batch_size=batch_size, hidden1=h1, hidden2=h2, out_classes=c)

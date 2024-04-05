@@ -23,8 +23,8 @@ class MNIST_MLP(object):
         # TODO：使用 pycnml 建立三层神经网络结构
 
         self.net.setInputShape(batch_size, input_size, 1, 1)  # 设置输入参数
-        # fc1
 
+        # fc1
         input_shapem1 = pycnnl.IntVector(4)
         input_shapem1[0] = batch_size
         input_shapem1[1] = 1
@@ -35,15 +35,61 @@ class MNIST_MLP(object):
         weight_shapem1[1] = 1
         weight_shapem1[2] = input_size
         weight_shapem1[3] = hidden1
-
         output_shapem1 = pycnnl.IntVector(4)
         output_shapem1[0] = batch_size
         output_shapem1[1] = 1
         output_shapem1[2] = 1
         output_shapem1[3] = hidden1
-
         self.net.createMlpLayer("fc1", input_shapem1, weight_shapem1, output_shapem1)
-        __________________
+
+        # relu1
+        self.net.createReLuLayer("relu1")
+
+        # fc2
+        input_shapem2 = pycnnl.IntVector(4)
+        input_shapem2[0] = batch_size
+        input_shapem2[1] = 1
+        input_shapem2[2] = 1
+        input_shapem2[3] = hidden1
+        weight_shapem2 = pycnnl.IntVector(4)
+        weight_shapem2[0] = batch_size
+        weight_shapem2[1] = 1
+        weight_shapem2[2] = hidden1
+        weight_shapem2[3] = hidden2
+        output_shapem2 = pycnnl.IntVector(4)
+        output_shapem2[0] = batch_size
+        output_shapem2[1] = 1
+        output_shapem2[2] = 1
+        output_shapem2[3] = hidden2
+        self.net.createMlpLayer("fc2", input_shapem2, weight_shapem2, output_shapem2)
+
+        # relu2
+        self.net.createReLuLayer("relu2")
+
+        # fc3
+        input_shapem3 = pycnnl.IntVector(4)
+        input_shapem3[0] = batch_size
+        input_shapem3[1] = 1
+        input_shapem3[2] = 1
+        input_shapem3[3] = hidden2
+        weight_shapem3 = pycnnl.IntVector(4)
+        weight_shapem3[0] = batch_size
+        weight_shapem3[1] = 1
+        weight_shapem3[2] = hidden2
+        weight_shapem3[3] = out_classes
+        output_shapem3 = pycnnl.IntVector(4)
+        output_shapem3[0] = batch_size
+        output_shapem3[1] = 1
+        output_shapem3[2] = 1
+        output_shapem3[3] = out_classes
+        self.net.createMlpLayer("fc3", input_shapem3, weight_shapem3, output_shapem3)
+
+        # softmax
+        input_shapem4 = pycnnl.IntVector(3)
+        input_shapem4[0] = batch_size
+        input_shapem4[1] = 1
+        input_shapem4[2] = out_classes
+        self.net.createSoftmaxLayer("softmax", input_shapem4, 1)
 
     def load_mnist(self, file_dir, is_images="True"):
         # Read binary data
@@ -74,13 +120,14 @@ class MNIST_MLP(object):
         return mat_data
 
     def load_data(self, data_path, label_path):
+        # TODO: 调用函数 load_mnist 读取和预处理 MNIST 中测试数据的图像和标记
         print("Loading MNIST data from files...")
-        test_images = ________________________
-        test_labels = ________________________
+        test_images = self.load_mnist(data_path, True)
+        test_labels = self.load_mnist(label_path, False)
         self.test_data = np.append(test_images, test_labels, axis=1)
 
     def load_model(self, param_dir):  # 加载参数
-        # TODO：使用pycnml接口分别为三层全连接层加载参数
+        # TODO：使用pycnnl接口分别为三层全连接层加载参数
         print("Loading parameters from file " + param_dir)
 
         params = np.load(param_dir, allow_pickle=True, encoding="latin1").item()
@@ -90,11 +137,11 @@ class MNIST_MLP(object):
 
         weigh2 = params["w2"].flatten().astype(np.float64)
         bias2 = params["b2"].flatten().astype(np.float64)
-        ____________________
+        self.net.loadParams(2, weigh2, bias2)
 
         weigh3 = params["w3"].flatten().astype(np.float64)
         bias3 = params["b3"].flatten().astype(np.float64)
-        ____________________
+        self.net.loadParams(4, weigh3, bias3)
 
     def forward(self):
         return self.net.forward()
@@ -131,8 +178,8 @@ class MNIST_MLP(object):
         print("Accuracy in test set: %f" % accuracy)
 
 
-HIDDEN1 = 32
-HIDDEN2 = 16
+HIDDEN1 = 128
+HIDDEN2 = 64
 OUT = 10
 
 

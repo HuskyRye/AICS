@@ -44,14 +44,19 @@ class ConvolutionalLayer(object):
         start_time = time.time()
         self.input = input  # [N, C, H, W]
         # TODO: 边界扩充
-        height = _______________________
-        width = _______________________
+        height = self.input.shape[2] + self.padding * 2
+        width = self.input.shape[3] + self.padding * 2
         self.input_pad = np.zeros(
             [self.input.shape[0], self.input.shape[1], height, width]
         )
-        self.input_pad[_______________________] = self.input
-        height_out = _______________________
-        width_out = _______________________
+        self.input_pad[
+            :,
+            :,
+            self.padding : self.padding + self.input.shape[2],
+            self.padding : self.padding + self.input.shape[3],
+        ] = self.input
+        height_out = (height - self.kernel_size) // self.stride + 1
+        width_out = (width - self.kernel_size) // self.stride + 1
         self.output = np.zeros(
             [self.input.shape[0], self.channel_out, height_out, width_out]
         )
@@ -60,7 +65,21 @@ class ConvolutionalLayer(object):
                 for idxh in range(height_out):
                     for idxw in range(width_out):
                         # TODO: 计算卷积层的前向传播，特征图与卷积核的内积再加偏置
-                        self.output[idxn, idxc, idxh, idxw] = _______________________
+                        self.output[idxn, idxc, idxh, idxw] = (
+                            np.sum(
+                                self.weight[:, :, :, idxc]
+                                * self.input_pad[
+                                    idxn,
+                                    :,
+                                    idxh * self.stride : idxh * self.stride
+                                    + self.kernel_size,
+                                    idxw * self.stride : idxw * self.stride
+                                    + self.kernel_size,
+                                ]
+                            )
+                            + self.bias[idxc]
+                        )
+
         return self.output
 
     def load_param(self, weight, bias):  # 参数加载
@@ -83,8 +102,8 @@ class MaxPoolingLayer(object):
         start_time = time.time()
         self.input = input  # [N, C, H, W]
         self.max_index = np.zeros(self.input.shape)
-        height_out = __________________________________
-        width_out = ________________________________
+        height_out = (self.input.shape[2] - self.kernel_size) // self.stride + 1
+        width_out = (self.input.shape[3] - self.kernel_size) // self.stride + 1
         self.output = np.zeros(
             [self.input.shape[0], self.input.shape[1], height_out, width_out]
         )
@@ -93,9 +112,16 @@ class MaxPoolingLayer(object):
                 for idxh in range(height_out):
                     for idxw in range(width_out):
                         # TODO： 计算最大池化层的前向传播， 取池化窗口内的最大值
-                        self.output[
-                            idxn, idxc, idxh, idxw
-                        ] = _______________________________
+                        self.output[idxn, idxc, idxh, idxw] = np.max(
+                            input[
+                                idxn,
+                                idxc,
+                                idxh * self.stride : idxh * self.stride
+                                + self.kernel_size,
+                                idxw * self.stride : idxw * self.stride
+                                + self.kernel_size,
+                            ]
+                        )
         return self.output
 
 
@@ -113,7 +139,7 @@ class FlattenLayer(object):
         assert list(input.shape[1:]) == list(self.input_shape)
         # matconvnet feature map dim: [N, height, width, channel]
         # ours feature map dim: [N, channel, height, width]
-        self.input = ____________________________________
+        self.input = np.transpose(input, [0, 2, 3, 1])
         self.output = self.input.reshape(
             [self.input.shape[0]] + list(self.output_shape)
         )

@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import struct
 import os
@@ -14,8 +15,8 @@ def show_time(time, name):
     pass
 
 
-class FullyConnectedLayer(object):  # 全连接层初始化
-    def __init__(self, num_input, num_output):
+class FullyConnectedLayer(object):
+    def __init__(self, num_input, num_output):  # 全连接层初始化
         self.num_input = num_input
         self.num_output = num_output
         print(
@@ -35,14 +36,15 @@ class FullyConnectedLayer(object):  # 全连接层初始化
         start_time = time.time()
         self.input = input
         # TODO：全连接层的前向传播，计算输出结果
-        self.output = _______________________________
+        self.output = input @ self.weight + self.bias
         return self.output
 
     def backward(self, top_diff):  # 反向传播的计算
         # TODO：全连接层的反向传播，计算参数梯度和本层损失
-        self.d_weight = ___________________________
-        self.d_bias = ___________________________
-        bottom_diff = ___________________________
+        self.d_weight = self.input.T @ top_diff
+        self.d_bias = np.ones([1, self.input.shape[0]]) @ top_diff
+        bottom_diff = top_diff @ self.weight.T
+
         return bottom_diff
 
     def get_gradient(self):
@@ -50,8 +52,8 @@ class FullyConnectedLayer(object):  # 全连接层初始化
 
     def update_param(self, lr):  # 参数更新
         # TODO：对全连接层参数利用参数进行更新
-        self.weight = _____________________
-        self.bias = _____________________
+        self.weight = self.weight - lr * self.d_weight
+        self.bias = self.bias - lr * self.d_bias
 
     def load_param(self, weight, bias):  # 参数加载
         assert self.weight.shape == weight.shape
@@ -65,17 +67,18 @@ class FullyConnectedLayer(object):  # 全连接层初始化
 
 class ReLULayer(object):
     def __init__(self):
-        print("\tReLU layer.")
+        print("\t Relu layer")
 
     def forward(self, input):  # 前向传播的计算
+        start_time = time.time()
         self.input = input
         # TODO：ReLU层的前向传播，计算输出结果
-        output = ___________________
+        output = np.maximum(0, input)
         return output
 
     def backward(self, top_diff):  # 反向传播的计算
         # TODO：ReLU层的反向传播，计算本层损失
-        bottom_diff = __________________
+        bottom_diff = np.where(self.input < 0, 0, top_diff)
         return bottom_diff
 
 
@@ -87,7 +90,8 @@ class SoftmaxLossLayer(object):
         # TODO：softmax 损失层的前向传播，计算输出结果
         input_max = np.max(input, axis=1, keepdims=True)
         input_exp = np.exp(input - input_max)
-        self.prob = __________________________
+        exp_sum = np.sum(input_exp, axis=1, keepdims=True)
+        self.prob = input_exp / exp_sum
         return self.prob
 
     def get_loss(self, label):  # 计算损失
@@ -99,5 +103,5 @@ class SoftmaxLossLayer(object):
 
     def backward(self):  # 反向传播的计算
         # TODO：softmax 损失层的反向传播，计算本层损失
-        bottom_diff = _______________________________________
+        bottom_diff = (self.prob - self.label_onehot) / self.batch_size
         return bottom_diff

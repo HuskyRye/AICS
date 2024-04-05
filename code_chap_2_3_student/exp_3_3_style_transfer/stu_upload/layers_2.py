@@ -70,22 +70,111 @@ class ConvolutionalLayer(object):
                 for idxh in range(height_out):
                     for idxw in range(width_out):
                         # TODO: 计算卷积层的前向传播，特征图与卷积核的内积再加偏置
-                        self.output[
-                            idxn, idxc, idxh, idxw
-                        ] = ____________________________
+                        self.output[idxn, idxc, idxh, idxw] = (
+                            np.sum(
+                                self.weight[:, :, :, idxc]
+                                * self.input_pad[
+                                    idxn,
+                                    :,
+                                    idxh * self.stride : idxh * self.stride
+                                    + self.kernel_size,
+                                    idxw * self.stride : idxw * self.stride
+                                    + self.kernel_size,
+                                ]
+                            )
+                            + self.bias[idxc]
+                        )
+
         self.forward_time = time.time() - start_time
         return self.output
 
     def forward_speedup(self, input):
         # TODO: 改进forward函数，使得计算加速
         start_time = time.time()
-        _______________________
+        self.input = input
+        height = self.input.shape[2] + self.padding * 2
+        width = self.input.shape[3] + self.padding * 2
+        self.input_pad = np.zeros(
+            [self.input.shape[0], self.input.shape[1], height, width]
+        )
+        self.input_pad[
+            :,
+            :,
+            self.padding : self.padding + self.input.shape[2],
+            self.padding : self.padding + self.input.shape[3],
+        ] = self.input
+        self.height_out = (height - self.kernel_size) // self.stride + 1
+        self.width_out = (width - self.kernel_size) // self.stride + 1
+
+        self.weight_reshape = np.reshape(self.weight, [-1, self.channel_out])
+        self.img2col = np.zeros(
+            [
+                self.input.shape[0] * self.height_out * self.width_out,
+                self.channel_in * self.kernel_size * self.kernel_size,
+            ]
+        )
+        for idxn in range(self.input.shape[0]):
+            for idxh in range(self.height_out):
+                for idxw in range(self.width_out):
+                    self.img2col[
+                        idxn * self.height_out * self.width_out
+                        + idxh * self.width_out
+                        + idxw,
+                        :,
+                    ] = self.input_pad[
+                        idxn,
+                        :,
+                        idxh * self.stride : idxh * self.stride + self.kernel_size,
+                        idxw * self.stride : idxw * self.stride + self.kernel_size,
+                    ].reshape(
+                        [-1]
+                    )
+        output = np.dot(self.img2col, self.weight_reshape) + self.bias
+        self.output = output.reshape(
+            [self.input.shape[0], self.height_out, self.width_out, -1]
+        ).transpose([0, 3, 1, 2])
+
         self.forward_time = time.time() - start_time
         return self.output
 
     def backward_speedup(self, top_diff):
         start_time = time.time()
-        _______________________
+
+        top_diff_reshaped = top_diff.transpose([0, 2, 3, 1]).reshape(
+            [-1, self.channel_out]
+        )
+        self.d_weight = np.dot(self.img2col.T, top_diff_reshaped).reshape(
+            self.weight.shape
+        )
+        self.d_bias = np.sum(top_diff_reshaped, axis=0)
+
+        bottom_diff_col = np.dot(top_diff_reshaped, self.weight_reshape.T)
+
+        bottom_diff = np.zeros(self.input_pad.shape)
+        for idxn in range(self.input.shape[0]):
+            for idxh in range(self.height_out):
+                for idxw in range(self.width_out):
+                    col = bottom_diff_col[
+                        idxn * self.height_out * self.width_out
+                        + idxh * self.width_out
+                        + idxw,
+                        :,
+                    ]
+                    bottom_diff[
+                        idxn,
+                        :,
+                        idxh * self.stride : idxh * self.stride + self.kernel_size,
+                        idxw * self.stride : idxw * self.stride + self.kernel_size,
+                    ] += col.reshape(
+                        [self.channel_in, self.kernel_size, self.kernel_size]
+                    )
+        bottom_diff = bottom_diff[
+            :,
+            :,
+            self.padding : self.padding + self.input.shape[2],
+            self.padding : self.padding + self.input.shape[3],
+        ]
+
         self.backward_time = time.time() - start_time
         return bottom_diff
 
@@ -99,8 +188,18 @@ class ConvolutionalLayer(object):
                 for idxh in range(top_diff.shape[2]):
                     for idxw in range(top_diff.shape[3]):
                         # TODO： 计算卷积层的反向传播， 权重、偏置的梯度和本层损失
-                        self.d_weight[:, :, :, idxc] += ___________________________
-                        self.d_bias[idxc] += ________________________
+                        self.d_weight[:, :, :, idxc] += (
+                            top_diff[idxn, idxc, idxh, idxw]
+                            * self.input_pad[
+                                idxn,
+                                :,
+                                idxh * self.stride : idxh * self.stride
+                                + self.kernel_size,
+                                idxw * self.stride : idxw * self.stride
+                                + self.kernel_size,
+                            ]
+                        )
+                        self.d_bias[idxc] += top_diff[idxn, idxc, idxh, idxw]
                         bottom_diff[
                             idxn,
                             :,
@@ -110,7 +209,12 @@ class ConvolutionalLayer(object):
                             top_diff[idxn, idxc, idxh, idxw]
                             * self.weight[:, :, :, idxc]
                         )
-        bottom_diff = ____________________________
+        bottom_diff = bottom_diff[
+            :,
+            :,
+            self.padding : self.padding + self.input.shape[2],
+            self.padding : self.padding + self.input.shape[3],
+        ]
         self.backward_time = time.time() - start_time
         return bottom_diff
 
@@ -166,9 +270,16 @@ class MaxPoolingLayer(object):
                 for idxh in range(height_out):
                     for idxw in range(width_out):
                         # TODO： 计算最大池化层的前向传播， 取池化窗口内的最大值
-                        self.output[
-                            idxn, idxc, idxh, idxw
-                        ] = ___________________________
+                        self.output[idxn, idxc, idxh, idxw] = np.max(
+                            self.input[
+                                idxn,
+                                idxc,
+                                idxh * self.stride : idxh * self.stride
+                                + self.kernel_size,
+                                idxw * self.stride : idxw * self.stride
+                                + self.kernel_size,
+                            ]
+                        )
                         curren_max_index = np.argmax(
                             self.input[
                                 idxn,

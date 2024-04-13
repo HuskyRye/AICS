@@ -15,7 +15,7 @@ TEST_LABEL = "t10k-labels-idx1-ubyte"
 
 
 def show_matrix(mat, name):
-    # print(name + str(mat.shape) + ' mean %f, std %f' % (mat.mean(), mat.std()))
+    # print(name + str(mat.shape) + " mean %f, std %f" % (mat.mean(), mat.std()))
     pass
 
 

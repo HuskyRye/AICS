@@ -13,52 +13,22 @@ from layers_3 import ContentLossLayer, StyleLossLayer
 
 
 def show_matrix(mat, name):
-    # print(name + str(mat.shape) + ' mean %f, std %f' % (mat.mean(), mat.std()))
+    # print(name + str(mat.shape) + " mean %f, std %f" % (mat.mean(), mat.std()))
     pass
 
 
 class VGG19(object):
     def __init__(self, param_path="../../imagenet-vgg-verydeep-19.mat"):
         self.param_path = param_path
+        # fmt: off
         self.param_layer_name = [
-            "conv1_1",
-            "relu1_1",
-            "conv1_2",
-            "relu1_2",
-            "pool1",
-            "conv2_1",
-            "relu2_1",
-            "conv2_2",
-            "relu2_2",
-            "pool2",
-            "conv3_1",
-            "relu3_1",
-            "conv3_2",
-            "relu3_2",
-            "conv3_3",
-            "relu3_3",
-            "conv3_4",
-            "relu3_4",
-            "pool3",
-            "conv4_1",
-            "relu4_1",
-            "conv4_2",
-            "relu4_2",
-            "conv4_3",
-            "relu4_3",
-            "conv4_4",
-            "relu4_4",
-            "pool4",
-            "conv5_1",
-            "relu5_1",
-            "conv5_2",
-            "relu5_2",
-            "conv5_3",
-            "relu5_3",
-            "conv5_4",
-            "relu5_4",
-            "pool5",
+            "conv1_1", "relu1_1", "conv1_2", "relu1_2", "pool1",
+            "conv2_1", "relu2_1", "conv2_2", "relu2_2", "pool2",
+            "conv3_1", "relu3_1", "conv3_2", "relu3_2", "conv3_3", "relu3_3", "conv3_4", "relu3_4", "pool3",
+            "conv4_1", "relu4_1", "conv4_2", "relu4_2", "conv4_3", "relu4_3", "conv4_4", "relu4_4", "pool4",
+            "conv5_1", "relu5_1", "conv5_2", "relu5_2", "conv5_3", "relu5_3", "conv5_4", "relu5_4", "pool5"
         ]
+        # fmt: on
 
     def build_model(self):
         # TODO： 建立VGG19网络结构
@@ -164,12 +134,12 @@ class VGG19(object):
         current = input_image
         layer_forward = {}
         for idx in range(len(self.param_layer_name)):
-            # print('Inferencing layer: ' + self.param_layer_name[idx])
+            # print("Inferencing layer: " + self.param_layer_name[idx])
             # TODO： 计算VGG19网络的前向传播
             current = self.layers[self.param_layer_name[idx]].forward(current)
             if self.param_layer_name[idx] in layer_list:
                 layer_forward[self.param_layer_name[idx]] = current
-        # print('Forward time: %f' % (time.time()-start_time))
+        # print("Forward time: %f" % (time.time()-start_time))
         return layer_forward
 
     def backward(self, dloss, layer_name):
@@ -178,7 +148,7 @@ class VGG19(object):
         for idx in range(layer_idx, -1, -1):
             # TODO： 计算VGG19网络的反向传播
             dloss = self.layers[self.param_layer_name[idx]].backward(dloss)
-        # print('Backward time: %f' % (time.time()-start_time))
+        # print("Backward time: %f" % (time.time()-start_time))
         return dloss
 
 

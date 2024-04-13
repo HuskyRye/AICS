@@ -4,16 +4,19 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 
-os.putenv('MLU_VISIBLE_DEVICES','')
+os.putenv("MLU_VISIBLE_DEVICES", "")
+# fmt: off
 cfgs = [64,'R', 64,'R', 'M', 128,'R', 128,'R', 'M',
        256,'R', 256,'R', 256,'R', 256,'R', 'M', 
        512,'R', 512,'R', 512,'R', 512,'R', 'M',
         512,'R', 512,'R', 512,'R', 512,'R', 'M']
+# fmt: on
+IMAGE_PATH = "data/strawberries.jpg"
+VGG_PATH = "data/imagenet-vgg-verydeep-19.mat"
 
-IMAGE_PATH = 'data/strawberries.jpg'
-VGG_PATH = 'data/imagenet-vgg-verydeep-19.mat'
 
 def vgg19():
+    # fmt: off
     layers = [
         'conv1_1', 'relu1_1', 'conv1_2', 'relu1_2', 'pool1',
         'conv2_1', 'relu2_1', 'conv2_2', 'relu2_2', 'pool2',
@@ -22,53 +25,53 @@ def vgg19():
         'conv5_1', 'relu5_1', 'conv5_2', 'relu5_2', 'conv5_3', 'relu5_3', 'conv5_4', 'relu5_4', 'pool5',
         'flatten', 'fc6', 'relu6','fc7', 'relu7', 'fc8', 'softmax'
     ]
+    # fmt: on
     layer_container = nn.Sequential()
     in_channels = 3
     num_classes = 1000
     for i, layer_name in enumerate(layers):
-        if layer_name.startswith('conv'):
+        if layer_name.startswith("conv"):
             # TODO: 在时序容器中传入卷积运算
             ________________________________________________
-        elif layer_name.startswith('relu'):
+        elif layer_name.startswith("relu"):
             # TODO: 在时序容器中执行ReLU计算
             ________________________________________________
-        elif layer_name.startswith('pool'):
+        elif layer_name.startswith("pool"):
             # TODO: 在时序容器中执行maxpool计算
             ________________________________________________
-        elif layer_name == 'flatten':
+        elif layer_name == "flatten":
             # TODO: 在时序容器中执行flatten计算
             ________________________________________________
-        elif layer_name == 'fc6':
+        elif layer_name == "fc6":
             # TODO: 在时序容器中执行全连接层计算
             ________________________________________________
-        elif layer_name == 'fc7':
+        elif layer_name == "fc7":
             # TODO: 在时序容器中执行全连接层计算
             ________________________________________________
-        elif layer_name == 'fc8':
+        elif layer_name == "fc8":
             # TODO: 在时序容器中执行全连接层计算
             ________________________________________________
-        elif layer_name == 'softmax':
+        elif layer_name == "softmax":
             # TODO: 在时序容器中执行Softmax计算
             ________________________________________________
     return layer_container
 
 
-if __name__ == '__main__':
-    #TODO:使用scipy加载.mat格式的VGG19模型
+if __name__ == "__main__":
+    # TODO:使用scipy加载.mat格式的VGG19模型
     ________________________________________________
 
     model = vgg19()
     new_state_dict = OrderedDict()
     for i, param_name in enumerate(model.state_dict()):
-        name = param_name.split('.')
-        if name[-1] == 'weight':
+        name = param_name.split(".")
+        if name[-1] == "weight":
             new_state_dict[param_name] = torch.from_numpy(datas[str(i)]).float()
         else:
             new_state_dict[param_name] = torch.from_numpy(datas[str(i)][0]).float()
-    #TODO:加载网络参数到model
+    # TODO:加载网络参数到model
     ________________________________________________
     print("*** Start Saving pth ***")
-    #TODO:保存模型的参数到models/vgg19.pth
+    # TODO:保存模型的参数到models/vgg19.pth
     ________________________________________________
-    print('Saving pth  PASS.')
-    
+    print("Saving pth  PASS.")

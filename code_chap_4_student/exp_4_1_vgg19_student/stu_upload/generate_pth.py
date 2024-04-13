@@ -32,34 +32,39 @@ def vgg19():
     for i, layer_name in enumerate(layers):
         if layer_name.startswith("conv"):
             # TODO: 在时序容器中传入卷积运算
-            ________________________________________________
+            layer_container.add_module(
+                layer_name, nn.Conv2d(in_channels, cfgs[i], kernel_size=3, padding=1)
+            )
+            in_channels = cfgs[i]
         elif layer_name.startswith("relu"):
             # TODO: 在时序容器中执行ReLU计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.ReLU(inplace=True))
         elif layer_name.startswith("pool"):
             # TODO: 在时序容器中执行maxpool计算
-            ________________________________________________
+            layer_container.add_module(
+                layer_name, nn.MaxPool2d(kernel_size=2, stride=2)
+            )
         elif layer_name == "flatten":
             # TODO: 在时序容器中执行flatten计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Flatten())
         elif layer_name == "fc6":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(512 * 7 * 7, 4096))
         elif layer_name == "fc7":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(4096, 4096))
         elif layer_name == "fc8":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(4096, num_classes))
         elif layer_name == "softmax":
             # TODO: 在时序容器中执行Softmax计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Softmax(dim=1))
     return layer_container
 
 
 if __name__ == "__main__":
     # TODO:使用scipy加载.mat格式的VGG19模型
-    ________________________________________________
+    datas = scipy.io.loadmat(VGG_PATH)
 
     model = vgg19()
     new_state_dict = OrderedDict()
@@ -70,8 +75,8 @@ if __name__ == "__main__":
         else:
             new_state_dict[param_name] = torch.from_numpy(datas[str(i)][0]).float()
     # TODO:加载网络参数到model
-    ________________________________________________
+    model.load_state_dict(new_state_dict)
     print("*** Start Saving pth ***")
     # TODO:保存模型的参数到models/vgg19.pth
-    ________________________________________________
+    torch.save(model.state_dict(), "models/vgg19.pth")
     print("Saving pth  PASS.")

@@ -33,34 +33,39 @@ def vgg19():
     for i, layer_name in enumerate(layers):
         if layer_name.startswith("conv"):
             # TODO: 在时序容器中传入卷积运算
-            ________________________________________________
+            layer_container.add_module(
+                layer_name, nn.Conv2d(in_channels, cfgs[i], kernel_size=3, padding=1)
+            )
+            in_channels = cfgs[i]
         elif layer_name.startswith("relu"):
             # TODO: 在时序容器中执行ReLU计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.ReLU(inplace=True))
         elif layer_name.startswith("pool"):
             # TODO: 在时序容器中执行maxpool计算
-            ________________________________________________
+            layer_container.add_module(
+                layer_name, nn.MaxPool2d(kernel_size=2, stride=2)
+            )
         elif layer_name == "flatten":
             # TODO: 在时序容器中执行flatten计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Flatten())
         elif layer_name == "fc6":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(512 * 7 * 7, 4096))
         elif layer_name == "fc7":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(4096, 4096))
         elif layer_name == "fc8":
             # TODO: 在时序容器中执行全连接层计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Linear(4096, num_classes))
         elif layer_name == "softmax":
             # TODO: 在时序容器中执行Softmax计算
-            ________________________________________________
+            layer_container.add_module(layer_name, nn.Softmax(dim=1))
     return layer_container
 
 
 def load_image(path):
     # TODO: 使用 Image.open模块读入输入图像，并返回形状为（1,244,244,3）的数组 image
-    ________________________________________________
+    image = Image.open(path)
     transform = transforms.Compose(
         [
             transforms.Resize(256),
@@ -70,23 +75,23 @@ def load_image(path):
         ]
     )
     # TODO: 对图像调用transform函数进行预处理
-    ________________________________________________
+    image = transform(image)
     # TODO: 对tensor的第0维进行扩展
-    ________________________________________________
+    image = image.unsqueeze(0)
     return image
 
 
 if __name__ == "__main__":
     input_image = load_image(IMAGE_PATH)
     # TODO: 生成VGG19网络模型并保存在net中
-    ________________________________________________
+    net = vgg19()
     # TODO: 加载网络参数到net中
-    ________________________________________________
+    net.load_state_dict(torch.load(VGG_PATH))
     # TODO: 模型进入推理模式
-    ________________________________________________
+    net.eval()
     st = time.time()
     # TODO: 计算 net,得到prob
-    ________________________________________________
+    prob = net(input_image)
     print("cpu infer time:{:.3f} s".format(time.time() - st))
     with open("./labels/imagenet_classes.txt") as f:
         classes = [line.strip() for line in f.readlines()]

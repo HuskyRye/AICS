@@ -1,6 +1,8 @@
 # AICS
 
-智能计算系统实验代码
+Code for AI computing system
+
+Spring 2024
 
 ## imagenet-vgg-verydeep-19.mat
 

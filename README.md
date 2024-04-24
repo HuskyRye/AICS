@@ -1,6 +1,6 @@
 # AICS
 
-Code for AI computing system
+Solutions for Labs of AI computing system
 
 Spring 2024
 

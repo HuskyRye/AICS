@@ -30,10 +30,10 @@ reg [ 31:0] result[3:0];
 
 initial
 begin
-  $readmemh("D:/pe_exp/data/inst", inst);
-  $readmemh("D:/pe_exp/data/neuron", neuron);
-  $readmemh("D:/pe_exp/data/weight", weight);
-  $readmemb("D:/pe_exp/data/result", result);
+  $readmemh("D:/pe_exp_student/data/inst", inst);
+  $readmemh("D:/pe_exp_student/data/neuron", neuron);
+  $readmemh("D:/pe_exp_student/data/weight", weight);
+  $readmemb("D:/pe_exp_student/data/result", result);
 end
 
 reg [ 1:0]   inst_addr;
@@ -118,15 +118,15 @@ always@(posedge clk or negedge rst_n) begin
   end
 end
 
-//always@(posedge clk or negedge rst_n) begin
-//  if(!rst_n) begin
-//    compare_pass <= 1'b1;
-//  end else if(pe_vld_o && (pe_result != reset[result_addr])) begin
-//    $display("FAIL: num.%d result not correct!!!", result_addr);;
-//    compare_pass <= 1'b0;
-//  end else if(pe_vld_o && (pe_result == reset[result_addr])) begin
-//    $display("INFO: num.%d result is correct.", result_addr);;
-//  end
-//end
+always@(posedge clk or negedge rst_n) begin
+  if(!rst_n) begin
+    compare_pass <= 1'b1;
+  end else if(pe_vld_o && (pe_result != result[result_addr])) begin
+    $display("FAIL: num.%d result not correct!!!", result_addr);
+    compare_pass <= 1'b0;
+  end else if(pe_vld_o && (pe_result == result[result_addr])) begin
+    $display("INFO: num.%d result is correct.", result_addr);
+  end
+end
 
 endmodule

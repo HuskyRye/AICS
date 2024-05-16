@@ -10,11 +10,11 @@ module serial_pe(
 );
 
 /*乘法器*/  /*TODO*/
-wire signed [31:0] mult_res = ________________________________________;
+wire signed [31:0] mult_res = neuron * weight;
 reg [31:0] psum_r;
 
 /*加法器*/  /*TODO*/
-wire [31:0] psum_d = _________________________________________________;
+wire [31:0] psum_d = (ctl[0]) ? mult_res : psum_r + mult_res;
 
 /*部分和寄存器*/
 always@(posedge clk or negedge rst_n)
@@ -27,7 +27,7 @@ end
 always@(posedge clk or negedge rst_n)
 if(!rst_n) begin
   vld_o <= 1'b0;
-end else if(____________________________________________________) begin
+end else if(vld_i && ctl[1]) begin
   vld_o <= 1'b1;
 end else begin
   vld_o <= 1'b0;

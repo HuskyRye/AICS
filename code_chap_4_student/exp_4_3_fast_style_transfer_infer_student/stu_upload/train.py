@@ -79,7 +79,7 @@ class ResBlock(nn.Module):
 
     def forward(self, x):
         # TODO: 返回残差运算的结果
-        return x + self.layer(x)
+        return x + self.layer(x) # Note: no ReLu after the addition, seems to have better results
 
 
 class TransNet(nn.Module):

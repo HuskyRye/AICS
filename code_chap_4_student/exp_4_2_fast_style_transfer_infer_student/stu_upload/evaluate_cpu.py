@@ -56,7 +56,7 @@ class ResBlock(nn.Module):
 
     def forward(self, x):
         # TODO: 返回残差运算的结果
-        return x + self.layer(x)
+        return nn.functional.relu(x + self.layer(x)) # Note: According to the experimental document, ReLU needs to be added here
 
 
 class TransNet(nn.Module):

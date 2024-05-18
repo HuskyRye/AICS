@@ -1,4 +1,4 @@
 *.mat
 *.pth
-*.zip
 *.bin
+/upload

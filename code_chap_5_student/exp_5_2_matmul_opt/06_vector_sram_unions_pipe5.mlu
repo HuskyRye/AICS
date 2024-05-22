@@ -43,7 +43,7 @@ __attribute__((noinline)) void multiplyMatricesCPU(float *left, float *right,
       result[i * k + j] = 0.0f;
       for (int x = 0; x < n; x++) {
         // TODO: 请补充标量矩阵乘计算部分代码
-        ________________________________________________________
+        result[i * k + j] += left[i * n + x] * right[x * k + j];
       }
     }
   }
@@ -52,9 +52,9 @@ __attribute__((noinline)) void multiplyMatricesCPU(float *left, float *right,
 __mlu_func__ void multiplyMatrices(float *left, float *right_wram,
                                    float *result, int m, int n, int k) {
   // TODO: 请补充左矩阵NRAM数组的声明
-  __nram__ float left_nram[_______________________];
+  __nram__ float left_nram[M_PER_LOOP * N * STAGES];
   // TODO: 请补充结果矩阵NRAM数组的声明
-  __nram__ float result_nram[_______________________];
+  __nram__ float result_nram[M_PER_LOOP * K * STAGES];
   int m_per_block = m / coreDim;
   int m_per_loop = m_per_block / STAGES;
   int loops = STAGES;
@@ -62,8 +62,8 @@ __mlu_func__ void multiplyMatrices(float *left, float *right_wram,
     __sync_io();
     if (loop < loops) {
       // TODO: 请补充将左矩阵从SRAM异步拷贝至NRAM的代码
-      __memcpy_async(____________________________________________,
-                     _______________________________________________________,
+      __memcpy_async(&left_nram[m_per_loop * N * (loop % STAGES)],
+                     &left[m_per_block * (taskId % coreDim) * N + loop * m_per_loop * N],
                      m_per_loop * n * sizeof(float), SRAM2NRAM);
     }
     if (loop >= 1 && loop <= loops) {
@@ -74,8 +74,8 @@ __mlu_func__ void multiplyMatrices(float *left, float *right_wram,
     if (loop >= STAGES) {
       // TODO: 请补充将结果矩阵从NRAM写回SRAM的代码
       __memcpy_async(
-          ____________________________________________________________________,
-          _________________________________________________________,
+          &result[m_per_block * (taskId % coreDim) * K + (loop - STAGES) * m_per_loop * K],
+          &result_nram[m_per_loop * k * ((loop - STAGES) % STAGES)],
           m_per_loop * k * sizeof(float), NRAM2SRAM);
     }
     __sync_move();
@@ -85,24 +85,23 @@ __mlu_func__ void multiplyMatrices(float *left, float *right_wram,
 __mlu_entry__ void multiplyMatricesMLU(float *left, float *right, float *result,
                                        int m, int n, int k) {
   // TODO: 请补充左矩阵SRAM数组的声明
-  __mlu_shared__ float left_sram[_____________________________];
+  __mlu_shared__ float left_sram[M_PER_LOOP_UNION * N * STAGES];
   __mlu_shared__ float right_sram[N * K];
   __wram__ float right_wram[N * K];
   // TODO: 请补充结果矩阵SRAM数组的声明
-  __mlu_shared__ float result_sram[_____________________________];
+  __mlu_shared__ float result_sram[M_PER_LOOP_UNION * K * STAGES];
   int m_per_block = m / taskDim;
   int m_per_union = m_per_block * coreDim;
   int m_per_loop_union = m_per_union / LOOPS;
   // TODO: 请补充将右矩阵从GDRAM异步拷贝至SRAM的代码
-  _______________________________________________________________
+  __memcpy_async(right_sram, right, N * K * sizeof(float), GDRAM2SRAM);
   // TODO: 请补充将右矩阵从SRAM异步拷贝至NRAM的代码
-  ___________________________________________________________________
+  __memcpy_async(right_sram, right, N * K * sizeof(float), GDRAM2SRAM);
   for (int loop = 0; loop < (LOOPS + STAGES); loop++) {
     if (loop < LOOPS) {
       // TODO: 请补充将左矩阵从GDRAM异步拷贝至SRAM的代码
-      __memcpy_async(__________________________________________________,
-                     _____________________________________________
-                         ___________________________,
+      __memcpy_async(&left_sram[m_per_loop_union * N * (loop % STAGES)],
+                     &left[(taskId * m_per_block + loop * m_per_loop_union) * N],
                      m_per_loop_union * n * sizeof(float), GDRAM2SRAM);
     }
     if (loop >= 1 && loop <= LOOPS) {
@@ -114,9 +113,8 @@ __mlu_entry__ void multiplyMatricesMLU(float *left, float *right, float *result,
     if (loop >= STAGES) {
       // TODO: 请补充将结果矩阵从SRAM写回GDRAM的代码
       __memcpy_async(
-          _______________________________________________
-              ______________________________________,
-          _______________________________________________________________,
+          &result[(taskId * m_per_block + (loop - STAGES) * m_per_loop_union) * k],
+          &result_sram[m_per_loop_union * k * ((loop - STAGES) % STAGES)],
           m_per_loop_union * k * sizeof(float), SRAM2GDRAM);
     }
     __sync_cluster();
@@ -177,19 +175,19 @@ int main() {
   cnrtQueue_t queue;
   CNRT_CHECK(cnrtQueueCreate(&queue));
   // TODO: 请补充核函数并行规模
-  cnrtDim3_t dim = {CNRT_FUNC_TYPE_UNION1, ______________________________, 1};
+  cnrtDim3_t dim = {CNRT_FUNC_TYPE_UNION1, 256, 1};
   cnrtFunctionType_t func_type = CNRT_FUNC_TYPE_UNION1;
   // TODO: 请补充核函数开始计时代码
-  _____________________________________________
+  CNRT_CHECK(cnrtPlaceNotifier(st_mlu, queue));
   multiplyMatricesMLU<<<dim, func_type, queue>>>(left_mlu, right_mlu,
                                                  result_mlu, m, n, k);
   // TODO: 请补充核函数结束计时代码
-  _____________________________________________
+  CNRT_CHECK(cnrtPlaceNotifier(et_mlu, queue));
   CNRT_CHECK(cnrtQueueSync(queue));
 
   float mlu_time_used = 0.0f;
   // TODO: 请补充核函数耗时统计代码
-  ____________________________________________________________________
+  CNRT_CHECK(cnrtNotifierDuration(st_mlu, et_mlu, &mlu_time_used));
   printf("\nMLU Time taken: %.3f ms\n", mlu_time_used);
 
   float *result_actual = (float *)malloc(m * k * sizeof(float));

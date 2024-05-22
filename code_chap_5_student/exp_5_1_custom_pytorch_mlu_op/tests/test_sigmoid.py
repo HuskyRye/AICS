@@ -16,7 +16,7 @@ class TestSigmoid(unittest.TestCase):
             x_cpu = torch.randn(shape)
             x_mlu = x_cpu.to('mlu')
             # TODO: 请补充mlu_custom_ext库的Sigmoid函数调用
-            y_mlu = _____________________(x_mlu)
+            y_mlu = mlu_functions.sigmoid(x_mlu)
             y_cpu = x_cpu.sigmoid()
             np.testing.assert_array_almost_equal(y_mlu.cpu(), y_cpu, decimal=3)
 
@@ -24,7 +24,7 @@ class TestSigmoid(unittest.TestCase):
         for shape in shapes:
             x_mlu = torch.randn(shape, requires_grad=True, device='mlu')
             # TODO: 请补充mlu_custom_ext库的Sigmoid函数调用
-            y_mlu = _____________________(x_mlu)
+            y_mlu = mlu_functions.sigmoid(x_mlu)
             z_mlu = torch.sum(y_mlu)
             z_mlu.backward()
             grad_mlu = x_mlu.grad

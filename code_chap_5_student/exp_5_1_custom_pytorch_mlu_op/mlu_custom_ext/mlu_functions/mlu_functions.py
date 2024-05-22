@@ -6,7 +6,7 @@ import torch.jit as jit
 from typing import Any
 
 # TODO: 请补充自定义算子库的名称
-from _________________ import * # NOSONAR
+from libmlu_custom_ext import * # NOSONAR
 
 
 class sigmoid_function(torch.autograd.Function):
@@ -17,7 +17,7 @@ class sigmoid_function(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x):
         # TODO: 请补充自定义算子的python接口函数名
-        y = __________________(x)
+        y = active_sigmoid_mlu(x)
         ctx.save_for_backward(*[x, y])
         return y
 

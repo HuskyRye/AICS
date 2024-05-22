@@ -14,7 +14,9 @@ class TestSigmoidBenchmark(unittest.TestCase):
     def test_forward_with_shapes(self, shapes=[(3, 4)]):
         # TODO: 为了计时能准确统计运算部分耗时，请补充预热代码
         for shape in shapes:
-            __________________________
+            x_cpu = torch.randn(shape)
+            x_mlu = x_cpu.to('mlu')
+            y_mlu = mlu_functions.sigmoid(x_mlu)
 
         for shape in shapes:
             event_start = torch.mlu.Event()
@@ -24,7 +26,7 @@ class TestSigmoidBenchmark(unittest.TestCase):
             x_cpu = torch.randn(shape)
             x_mlu = x_cpu.to('mlu')
             # TODO: 请补充mlu_custom_ext库的Sigmoid函数调用
-            y_mlu = _____________________(x_mlu)
+            y_mlu = mlu_functions.sigmoid(x_mlu)
             y_cpu = x_cpu.sigmoid()
             np.testing.assert_array_almost_equal(y_mlu.cpu(), y_cpu, decimal=3)
             event_end.record()
@@ -35,7 +37,9 @@ class TestSigmoidBenchmark(unittest.TestCase):
     def test_backward_with_shapes(self, shapes=[(3, 4)]):
         # TODO: 为了计时能准确统计运算部分耗时，请补充预热代码
         for shape in shapes:
-            ____________________________________________________________
+            x_cpu = torch.randn(shape)
+            x_mlu = x_cpu.to('mlu')
+            y_mlu = mlu_functions.sigmoid(x_mlu)
 
         for shape in shapes:
             event_start = torch.mlu.Event()
@@ -44,7 +48,7 @@ class TestSigmoidBenchmark(unittest.TestCase):
             event_start.record()
             x_mlu = torch.randn(shape, requires_grad=True, device='mlu')
             # TODO: 请补充mlu_custom_ext库的Sigmoid函数调用
-            y_mlu = _____________________(x_mlu)
+            y_mlu = mlu_functions.sigmoid(x_mlu)
             z_mlu = torch.sum(y_mlu)
             z_mlu.backward()
             grad_mlu = x_mlu.grad

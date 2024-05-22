@@ -21,7 +21,7 @@ torch::Tensor active_sigmoid_mlu(torch::Tensor x) {
 
   cnrtQueue_t queue = getCurQueue();
   // TODO: 请补充Sigmoid主程序函数接口的签名
-  _________________________(
+  bang_sigmoid_kernel_entry(
       queue,
       reinterpret_cast<float*>(y_ptr),
       reinterpret_cast<float*>(x_ptr),
